@@ -49,7 +49,8 @@ if submitted:
             else:
                 st.toast("🍚 최적의 식당을 찾았습니다!")
                 
-                st.markdown("""
+                # f-string을 사용해서 TOP 뒤의 숫자가 1, 2, 3으로 알아서 바뀌게
+                st.markdown(f"""
                 <div style="
                 padding:15px;
                 background:#F6EDEE;
@@ -59,7 +60,7 @@ if submitted:
                 font-weight:bold;
                 margin-bottom:20px;
                 ">
-                🍚 추천 결과 TOP 3
+                🍚 추천 결과 TOP {len(results)}
                 </div>
                 """, unsafe_allow_html=True)
                 

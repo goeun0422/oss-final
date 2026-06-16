@@ -91,7 +91,7 @@ def get_recommendation(data: MealRequest):
             "name": "추천 불가",
             "price": 0,
             "time": 0,
-            "reason": "현재 예산과 시간으로 이용 가능한 식당이 없습니다. 예산을 올리거나 공강 시간을 늘려보세요!"
+            "reason": "현재 예산과 시간으로 이용 가능한 식당이 없습니다."
         }]
         
     return top_3

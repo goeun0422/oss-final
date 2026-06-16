@@ -4,7 +4,7 @@ import urllib.parse
 
 st.set_page_config(page_title="광운대 공강 생존 식당 추천", page_icon="🍚", layout="wide")
 
-st.title("🍚 광운대 공강 생존 식당 추천")
+st.title("🍚 광운대 공강 맞춤 식당 추천")
 st.write("시간, 예산, 배고픔 정도를 고려하여 지금 가장 적합한 식당을 추천해드립니다.")
 
 with st.sidebar:

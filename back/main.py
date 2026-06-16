@@ -9,7 +9,7 @@ class MealRequest(BaseModel):
     time_left: int
     hunger: int
 
-# 광운대 맞춤형 식당 데이터베이스
+# 식당 데이터베이스
 RESTAURANTS = [
     {"name": "후문식당", "location": "새빛관", "price": 8000, "time": 45, "hungry": 5},
     {"name": "로스2000", "location": "새빛관", "price": 12000, "time": 70, "hungry": 5},
@@ -32,7 +32,7 @@ RESTAURANTS = [
     {"name": "카페 베르데", "location": "기념관", "price": 5000, "time": 15, "hungry": 2},
     {"name": "이디야", "location": "기념관", "price": 3200, "time": 15, "hungry": 1},
     {"name": "빽다방", "location": "기념관", "price": 1500, "time": 10, "hungry": 1},
-    {"name": "세븐일레븐", "location": "기념관", "price": 4000, "time": 10, "hungry": 2}
+    {"name": "세븐일레븐", "location": "기념관", "price": 1000, "time": 10, "hungry": 2}
 ]
 
 @app.post("/recommend")
@@ -40,7 +40,6 @@ def get_recommendation(data: MealRequest):
     candidates = []
     
     for r in RESTAURANTS:
-        # 1. 예산 및 시간 필터링 (조건 안 맞으면 탈락)
         if r["price"] > data.budget:
             continue
             
@@ -50,17 +49,15 @@ def get_recommendation(data: MealRequest):
         if total_time_required > data.time_left:
             continue
             
-        # 2. 정교한 점수 계산
         score = 0
-        score += 10 - (abs(r["hungry"] - data.hunger) * 2) # 배고픔 일치도
+        score += 10 - (abs(r["hungry"] - data.hunger) * 3)
         
         if r["location"] == data.location:
-            score += 10 # 가까운 위치 가산점
+            score += 10
             
         if data.budget - r["price"] >= 3000:
-            score += 5 # 예산 여유 가산점
+            score += 5
             
-        # 3. 상황에 맞는 동적 추천 이유 생성
         reasons = []
         if r["location"] == data.location:
             reasons.append("현재 위치와 가까워요")
@@ -85,16 +82,16 @@ def get_recommendation(data: MealRequest):
             "reason": reason_text
         })
         
-    # 점수 높은 순으로 정렬하여 3개 추출
     candidates.sort(key=lambda x: (x["score"], -x["time"]), reverse=True)
     top_3 = candidates[:3]
     
-    # 예외 처리
+    # 텅 빈 결과를 위한 확실한 플래그 처리
     if not top_3:
         return [{
-            "name": f"{data.location} 근처 편의점 런", 
-            "price": 0, 
-            "reason": "현재 잔고와 남은 시간으로는 갈 수 있는 식당이 없습니다!"
+            "name": "추천 불가",
+            "price": 0,
+            "time": 0,
+            "reason": "현재 예산과 시간으로 이용 가능한 식당이 없습니다. 예산을 올리거나 공강 시간을 늘려보세요!"
         }]
         
     return top_3

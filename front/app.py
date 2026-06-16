@@ -1,31 +1,29 @@
 import streamlit as st
 import requests
+import urllib.parse
 
-st.set_page_config(page_title="광운대 공강 생존기", page_icon="🍚")
+st.set_page_config(page_title="광운대 공강 생존 식당 추천", page_icon="🍚", layout="wide")
 
-st.title("🍚 광운대 공강 생존 식당 추천 시스템")
-st.write("시간, 지갑 사정, 그리고 내 배고픔에 딱 맞는 식당을 찾아드립니다.")
+st.title("🍚 광운대 공강 생존 식당 추천")
+st.write("시간, 예산, 배고픔 정도를 고려하여 지금 가장 적합한 식당을 추천해드립니다.")
 
-with st.form("meal_form"):
-    st.subheader("현재 상황을 입력해주세요")
-    
-    location_input = st.radio("현재 가장 가까운 건물은?", ["80주년기념관 (정문 쪽)", "새빛관 (후문 쪽)"], horizontal=True)
-    budget = st.number_input("현재 지갑 사정 (원)", min_value=0, step=1000, value=8000)
-    time_left = st.slider("다음 수업까지 남은 시간 (분)", 10, 120, 50)
-    
-    # 배고픔 게이지(1~5)
-    hunger_text = st.radio(
-        "현재 배고픔 게이지", 
-        ["🍚", "🍚🍚", "🍚🍚🍚", "🍚🍚🍚🍚", "🍚🍚🍚🍚🍚"], 
-        horizontal=True,
-        index=2 # 기본값 3점
-    )
-    
-    submitted = st.form_submit_button("🔥 최적의 식당 찾기")
+with st.sidebar:
+    st.header("현재 상황 입력")
+    with st.form("meal_form"):
+        location_input = st.radio("현재 가장 가까운 건물은?", ["80주년기념관 (정문 쪽)", "새빛관 (후문 쪽)"])
+        budget = st.number_input("현재 지갑 사정 (원)", min_value=0, step=1000, value=8000)
+        time_left = st.slider("다음 수업까지 남은 시간 (분)", 10, 120, 50)
+        
+        hunger_text = st.radio(
+            "현재 배고픔 게이지", 
+            ["🍚", "🍚🍚", "🍚🍚🍚", "🍚🍚🍚🍚", "🍚🍚🍚🍚🍚"], 
+            index=2
+        )
+        
+        submitted = st.form_submit_button("🔥 최적의 식당 찾기")
 
 if submitted:
     loc_data = "기념관" if "기념관" in location_input else "새빛관"
-    
     hunger_data = len(hunger_text)
     
     payload = {
@@ -39,27 +37,50 @@ if submitted:
     
     try:
         response = requests.post(api_url, json=payload)
+        
         if response.status_code == 200:
             results = response.json()
             
-            st.balloons()
-            
-            st.markdown("---")
-            st.success("✨ 분석 완료! 당신을 위한 추천 식당 TOP 3입니다.")
-            
-            for i, res in enumerate(results):
-                if i == 0:
-                    st.subheader(f"🥇 1위: {res['name']}")
-                    st.info(f"💸 예상 가격: {res['price']}원 | ⏱️ 예상 소요 시간: {res.get('time', '?')}분")
-                else:
-                    st.write(f"**{i+1}위:** {res['name']} ({res['price']}원)")
+            # 예외 처리: 조건에 맞는 식당이 없을 때
+            if results[0]["name"] == "추천 불가":
+                st.warning(f"🚨 {results[0]['reason']}")
                 
-                st.caption(f"💡 {res['reason']}")
+            # 조건에 맞는 식당이 있을 때 
+            else:
+                st.toast("🍚 최적의 식당을 찾았습니다!")
                 
-                if res['price'] > 0:
-                    map_link = f"https://map.kakao.com/link/search/광운대 {res['name']}"
-                    st.markdown(f"[🗺️ 지도에서 **{res['name']}** 위치 보기]({map_link})")
-                st.write("") 
+                st.markdown("""
+                <div style="
+                padding:15px;
+                background:#F6EDEE;
+                border-left:6px solid #7A0019;
+                border-radius:10px;
+                font-size:20px;
+                font-weight:bold;
+                margin-bottom:20px;
+                ">
+                🍚 추천 결과 TOP 3
+                </div>
+                """, unsafe_allow_html=True)
+                
+                medals = ["🥇", "🥈", "🥉"]
+                
+                for i, res in enumerate(results):
+                    with st.container(border=True):
+                        st.subheader(f"{medals[i]} {res['name']}")
+                        
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            st.metric("가격", f"{res['price']}원")
+                        with col2:
+                            st.metric("시간", f"{res['time']}분")
+                        
+                        st.caption(f"💡 {res['reason']}")
+                        
+                        if res['price'] > 0:
+                            query = urllib.parse.quote(f"광운대 {res['name']}")
+                            map_link = f"https://map.kakao.com/link/search/{query}"
+                            st.link_button("🗺️ 지도 보기", map_link)
                 
         else:
             st.error("서버에서 올바른 응답을 받지 못했습니다.")
